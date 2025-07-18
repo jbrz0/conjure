@@ -1,0 +1,58 @@
+### Chat API Test
+POST http://localhost:3000/api/chat
+Content-Type: application/json
+
+{
+  "prompt": "Create a simple greeting card with a rating system"
+}
+
+### Chat API Test - Long Prompt
+POST http://localhost:3000/api/chat
+Content-Type: application/json
+
+{
+  "prompt": "Generate a comprehensive dashboard showing weather information, a to-do list form, and user ratings for different cities. Make it interactive and visually appealing."
+}
+
+### Chat API Test - Invalid Request
+POST http://localhost:3000/api/chat
+Content-Type: application/json
+
+{
+  "prompt": ""
+}
+
+### Stripe Checkout Creation (requires authentication)
+POST http://localhost:3000/api/stripe/create-checkout
+Content-Type: application/json
+Authorization: Bearer YOUR_SUPABASE_JWT_TOKEN
+
+{}
+
+### Stripe Webhook Test (use ngrok for local testing)
+POST http://localhost:3000/api/stripe/webhook
+Content-Type: application/json
+Stripe-Signature: YOUR_STRIPE_SIGNATURE
+
+{
+  "id": "evt_test_webhook",
+  "object": "event",
+  "api_version": "2024-06-20",
+  "created": 1677649948,
+  "data": {
+    "object": {
+      "id": "cs_test_session",
+      "object": "checkout.session",
+      "metadata": {
+        "user_id": "test-user-id"
+      }
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": {
+    "id": "req_test_request",
+    "idempotency_key": null
+  },
+  "type": "checkout.session.completed"
+}
