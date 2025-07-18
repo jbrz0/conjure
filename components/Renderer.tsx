@@ -1,154 +1,79 @@
 'use client'
 
 import React from 'react'
-import {
-  Card,
-  FormGroup,
-  InputGroup,
-  HTMLSelect,
-  Button,
-  Tag,
-  Intent,
-} from '@blueprintjs/core'
-import { DateInput3 } from '@blueprintjs/datetime2'
-import { ComponentSpec, AIResponse } from '@/lib/types'
 import Image from 'next/image'
+import { Card, Icon } from '@blueprintjs/core'
+import { AIResponse, ComponentSpec } from '@/lib/types'
+import { DynamicForm } from './DynamicForm'
+import { DynamicChart } from './DynamicChart'
 
 interface RendererProps {
   response: AIResponse
+  onFormSubmit: (formData: Record<string, string>) => void
 }
 
-interface ComponentRendererProps {
-  component: ComponentSpec
-}
-
-const ComponentRenderer: React.FC<ComponentRendererProps> = ({ component }) => {
+const renderComponent = (
+  component: ComponentSpec,
+  onFormSubmit: (formData: Record<string, string>) => void
+) => {
   switch (component.kind) {
     case 'text':
-      return (
-        <div className="bp5-running-text">
-          <p>{component.content}</p>
-        </div>
-      )
+      return <p className="bp5-running-text">{component.content}</p>
 
     case 'image':
       return (
-        <div className="image-container">
-          <Image
-            src={component.url}
-            alt={component.alt || 'Generated image'}
-            width={400}
-            height={300}
-            style={{ maxWidth: '100%', height: 'auto' }}
-            className="bp5-elevation-1"
-          />
-        </div>
+        <Image
+          src={component.url}
+          alt={component.alt || 'generated image'}
+          width={400}
+          height={300}
+          className="rounded-lg max-w-full h-auto"
+        />
       )
 
     case 'rating':
       return (
-        <div className="rating-container">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {Array.from({ length: component.of }, (_, i) => (
-              <Tag
-                key={i}
-                intent={i < component.value ? Intent.PRIMARY : Intent.NONE}
-                minimal={i >= component.value}
-              >
-                ★
-              </Tag>
-            ))}
-            <span className="bp5-text-muted">
-              {component.value} / {component.of}
-            </span>
-          </div>
+        <div className="flex items-center">
+          <Icon icon="star" className="mr-1" /> {component.value} / {component.of}
         </div>
       )
 
     case 'card':
       return (
-        <Card elevation={1} className="component-card">
-          <h4 className="bp5-heading">{component.title}</h4>
-          <p className="bp5-running-text">{component.body}</p>
+        <Card>
+          <h5 className="font-bold text-lg">{component.title}</h5>
+          <p>{component.body}</p>
         </Card>
       )
 
     case 'form':
-      return (
-        <Card elevation={1} className="form-card">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              // Handle form submission
-              console.log('Form submitted')
-            }}
-          >
-            {component.fields.map((field, index) => (
-              <FormGroup key={index} label={field.label}>
-                {field.field === 'input' && (
-                  <InputGroup
-                    placeholder={field.placeholder}
-                    fill
-                  />
-                )}
-                {field.field === 'date' && (
-                  <DateInput3
-                    fill
-                    formatDate={(date) => date.toLocaleDateString()}
-                    parseDate={(str) => new Date(str)}
-                    placeholder="Select date..."
-                  />
-                )}
-                {field.field === 'select' && (
-                  <HTMLSelect fill options={field.options} />
-                )}
-              </FormGroup>
-            ))}
-            <Button type="submit" intent={Intent.PRIMARY} text="Submit" />
-          </form>
-        </Card>
-      )
+      return <DynamicForm fields={component.fields} onSubmit={onFormSubmit} />
+
+    case 'chart':
+      return <DynamicChart data={component.data} width={500} height={300} />
 
     default:
-      // Fallback for unknown component types
-      return (
-        <Card elevation={1} className="fallback-card">
-          <h5 className="bp5-heading">Unknown Component</h5>
-          <pre className="bp5-code-block">
-            {JSON.stringify(component, null, 2)}
-          </pre>
-        </Card>
-      )
+      // @ts-ignore
+      return <p className="text-red-500">Unsupported component type: {component.kind}</p>
   }
 }
 
-const Renderer: React.FC<RendererProps> = ({ response }) => {
-  const getLayoutClassName = (layout: AIResponse['layout']) => {
-    switch (layout) {
-      case 'grid':
-        return 'renderer-grid'
-      case 'carousel':
-        return 'renderer-carousel'
-      case 'modal':
-        return 'renderer-modal'
-      case 'stack':
-      default:
-        return 'renderer-stack'
-    }
+export const Renderer: React.FC<RendererProps> = ({ response, onFormSubmit }) => {
+  const layoutClasses = {
+    stack: 'flex flex-col space-y-4',
+    grid: 'grid grid-cols-1 md:grid-cols-2 gap-4',
+    carousel: 'flex space-x-4 overflow-x-auto p-4',
+    modal: '', // Modal layout would be handled by a parent component
   }
 
   return (
-    <div className="renderer-container">
-      <div className="topline">
-        <h3 className="bp5-heading">{response.topline}</h3>
-      </div>
-      <div className={`components-container ${getLayoutClassName(response.layout)}`}>
+    <div className="p-4">
+      {response.topline && <h3 className="text-2xl font-bold mb-4">{response.topline}</h3>}
+      <div className={layoutClasses[response.layout]}>
         {response.components.map((component, index) => (
-          <ComponentRenderer key={index} component={component} />
+          <div key={index}>{renderComponent(component, onFormSubmit)}</div>
         ))}
       </div>
     </div>
   )
 }
-
-export default Renderer

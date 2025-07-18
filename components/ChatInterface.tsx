@@ -12,7 +12,7 @@ import {
   Spinner,
 } from '@blueprintjs/core'
 import { IconNames } from '@blueprintjs/icons'
-import Renderer from './Renderer'
+import { Renderer } from './Renderer'
 import { AIResponse, ChatMessage, UsageQuota } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
@@ -73,22 +73,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
     setChatHistory(data || [])
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!prompt.trim() || isLoading) return
+  const sendPrompt = async (promptText: string) => {
+    if (!promptText.trim() || isLoading) return
 
     // Check quota for anonymous users
     if (!user && anonymousCount >= 10) {
       getToaster().show({
-        message: 'You\'ve reached the 10 message limit. Please sign up to continue.',
+        message: "You've reached the 10 message limit. Please sign up to continue.",
         intent: Intent.WARNING,
       })
       return
     }
 
     setIsLoading(true)
-    const currentPrompt = prompt
-    setPrompt('')
+    setCurrentResponse(null) // Clear previous response
 
     try {
       const response = await fetch('/api/chat', {
@@ -96,7 +94,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: currentPrompt }),
+        body: JSON.stringify({ prompt: promptText }),
       })
 
       const data = await response.json()
@@ -120,7 +118,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
         setAnonymousCount(newCount)
         localStorage.setItem('conjure_anonymous_count', newCount.toString())
       } else {
-        // Reload chat history to include new message
         loadChatHistory()
       }
     } catch (error) {
@@ -132,6 +129,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const currentPrompt = prompt
+    setPrompt('')
+    await sendPrompt(currentPrompt)
+  }
+
+  const handleFormSubmit = (formData: Record<string, string>) => {
+    const formattedData = Object.entries(formData)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ')
+    const newPrompt = `Form submitted with data: ${formattedData}`
+    sendPrompt(newPrompt)
   }
 
   const getQuotaDisplay = () => {
@@ -151,7 +163,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
           {/* Current Response */}
           {currentResponse && (
             <div className="current-response">
-              <Renderer response={currentResponse} />
+              <Renderer response={currentResponse} onFormSubmit={handleFormSubmit} />
             </div>
           )}
 

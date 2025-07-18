@@ -1,47 +1,56 @@
 import { z } from 'zod'
 
 // AI Response Schema
-export const FieldSpecSchema = z.discriminatedUnion('field', [
-  z.object({
-    field: z.literal('input'),
-    label: z.string(),
-    placeholder: z.string().optional(),
-  }),
-  z.object({
-    field: z.literal('date'),
-    label: z.string(),
-  }),
-  z.object({
-    field: z.literal('select'),
-    label: z.string(),
-    options: z.array(z.string()),
-  }),
-])
+// This schema now matches the 'FormField' interface in DynamicForm.tsx
+export const FieldSpecSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  type: z.enum(['text', 'select']),
+  options: z.array(z.string()).optional(),
+  defaultValue: z.string().optional(),
+});
 
-export const ComponentSpecSchema = z.discriminatedUnion('kind', [
-  z.object({
-    kind: z.literal('text'),
-    content: z.string(),
-  }),
-  z.object({
-    kind: z.literal('image'),
-    url: z.string(),
-    alt: z.string().optional(),
-  }),
-  z.object({
-    kind: z.literal('rating'),
-    value: z.number(),
-    of: z.number(),
-  }),
-  z.object({
-    kind: z.literal('card'),
-    title: z.string(),
-    body: z.string(),
-  }),
-  z.object({
-    kind: z.literal('form'),
-    fields: z.array(FieldSpecSchema),
-  }),
+const TextComponentSchema = z.object({
+  kind: z.literal('text'),
+  content: z.string(),
+});
+
+const ChartComponentSchema = z.object({
+  kind: z.literal('chart'),
+  chartType: z.enum(['bar', 'line', 'pie']),
+  data: z.array(z.object({ label: z.string(), value: z.number() })),
+});
+
+const ImageComponentSchema = z.object({
+  kind: z.literal('image'),
+  url: z.string(),
+  alt: z.string().optional(),
+});
+
+const RatingComponentSchema = z.object({
+  kind: z.literal('rating'),
+  value: z.number(),
+  of: z.number(),
+});
+
+const CardComponentSchema = z.object({
+  kind: z.literal('card'),
+  title: z.string(),
+  body: z.string(),
+});
+
+const FormComponentSchema = z.object({
+  kind: z.literal('form'),
+  fields: z.array(FieldSpecSchema),
+});
+
+export const ComponentSpecSchema = z.union([
+  TextComponentSchema,
+  ImageComponentSchema,
+  RatingComponentSchema,
+  CardComponentSchema,
+  FormComponentSchema,
+  ChartComponentSchema,
 ])
 
 export const AIResponseSchema = z.object({

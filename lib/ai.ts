@@ -22,11 +22,11 @@ Component types available:
 - {"kind": "rating", "value": number, "of": number} - for ratings/scores
 - {"kind": "card", "title": "string", "body": "string"} - for card layouts
 - {"kind": "form", "fields": [...]} - for interactive forms
+- {"kind": "chart", "chartType": "bar", "data": [{"label": "string", "value": number}]} - for data visualizations. Use this for displaying quantitative data.
 
-Form field types:
-- {"field": "input", "label": "string", "placeholder": "string"}
-- {"field": "date", "label": "string"}
-- {"field": "select", "label": "string", "options": ["option1", "option2"]}
+Form field types (MUST include id, label, and type):
+- {"id": "string", "label": "string", "type": "text", "defaultValue": "string"}
+- {"id": "string", "label": "string", "type": "select", "options": ["option1", "option2"]}
 
 Choose layout based on content:
 - "stack" - vertical list of components

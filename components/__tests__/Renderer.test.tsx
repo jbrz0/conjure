@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import Renderer from '../Renderer'
+import { Renderer } from '../Renderer'
 import { AIResponse } from '@/lib/types'
 
 describe('Renderer Component', () => {
@@ -16,7 +16,7 @@ describe('Renderer Component', () => {
       ],
     }
 
-    render(<Renderer response={response} />)
+    render(<Renderer response={response} onFormSubmit={vi.fn()} />)
     
     expect(screen.getByText('Test response')).toBeInTheDocument()
     expect(screen.getByText('Hello, world!')).toBeInTheDocument()
@@ -35,7 +35,7 @@ describe('Renderer Component', () => {
       ],
     }
 
-    render(<Renderer response={response} />)
+    render(<Renderer response={response} onFormSubmit={vi.fn()} />)
     
     expect(screen.getByText('Test Card')).toBeInTheDocument()
     expect(screen.getByText('This is a test card body.')).toBeInTheDocument()
@@ -54,7 +54,7 @@ describe('Renderer Component', () => {
       ],
     }
 
-    render(<Renderer response={response} />)
+    render(<Renderer response={response} onFormSubmit={vi.fn()} />)
     
     expect(screen.getByText('4 / 5')).toBeInTheDocument()
   })
@@ -75,9 +75,9 @@ describe('Renderer Component', () => {
       ],
     }
 
-    render(<Renderer response={response as AIResponse} />)
+    render(<Renderer response={response as AIResponse} onFormSubmit={vi.fn()} />)
     
     expect(screen.getByText('Valid component')).toBeInTheDocument()
-    expect(screen.getByText('Unknown Component')).toBeInTheDocument()
+    expect(screen.getByText(/Unsupported component type: unknown/i)).toBeInTheDocument()
   })
 })
