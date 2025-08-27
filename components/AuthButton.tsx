@@ -1,42 +1,47 @@
 'use client'
 
 import React, { useState } from 'react'
-import {
-  Button,
-  Dialog,
-  FormGroup,
-  InputGroup,
-  Intent,
-  Toaster,
-  Position,
-  Tabs,
-  Tab,
-} from '@blueprintjs/core'
-import { IconNames } from '@blueprintjs/icons'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
+import Button from '@mui/joy/Button'
+import Input from '@mui/joy/Input'
+import Modal from '@mui/joy/Modal'
+import ModalDialog from '@mui/joy/ModalDialog'
+import DialogTitle from '@mui/joy/DialogTitle'
+import DialogContent from '@mui/joy/DialogContent'
+import FormControl from '@mui/joy/FormControl'
+import FormLabel from '@mui/joy/FormLabel'
+import Tabs from '@mui/joy/Tabs'
+import TabList from '@mui/joy/TabList'
+import Tab from '@mui/joy/Tab'
+import TabPanel from '@mui/joy/TabPanel'
+import Box from '@mui/joy/Box'
+import Typography from '@mui/joy/Typography'
+import Snackbar from '@mui/joy/Snackbar'
+import Alert from '@mui/joy/Alert'
+import LoginIcon from '@mui/icons-material/Login'
+import LogoutIcon from '@mui/icons-material/Logout'
+import CreditCardIcon from '@mui/icons-material/CreditCard'
 
 interface AuthButtonProps {
   user: User | null
   onAuthChange: (user: User | null) => void
 }
 
-let toaster: Toaster | null = null;
-
 const AuthButton: React.FC<AuthButtonProps> = ({ user, onAuthChange }) => {
-  const getToaster = (): Toaster => {
-    if (toaster === null) {
-        toaster = Toaster.create({ position: Position.TOP });
-    }
-    return toaster;
-  };
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [selectedTab, setSelectedTab] = useState<'signin' | 'signup'>('signin')
-  
+  const [selectedTab, setSelectedTab] = useState<string | number>('signin')
+
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', color: 'success' as 'success' | 'danger' | 'warning' })
+
   const supabase = createClient()
+
+  const showSnackbar = (message: string, color: 'success' | 'danger' | 'warning') => {
+    setSnackbar({ open: true, message, color });
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,10 +55,7 @@ const AuthButton: React.FC<AuthButtonProps> = ({ user, onAuthChange }) => {
       })
 
       if (error) {
-        getToaster().show({
-          message: error.message,
-          intent: Intent.DANGER,
-        })
+        showSnackbar(error.message, 'danger')
         return
       }
 
@@ -62,17 +64,11 @@ const AuthButton: React.FC<AuthButtonProps> = ({ user, onAuthChange }) => {
         setIsDialogOpen(false)
         setEmail('')
         setPassword('')
-        getToaster().show({
-          message: 'Successfully signed in!',
-          intent: Intent.SUCCESS,
-        })
+        showSnackbar('Successfully signed in!', 'success')
       }
     } catch (error) {
       console.error('Sign in error:', error)
-      getToaster().show({
-        message: 'An error occurred during sign in',
-        intent: Intent.DANGER,
-      })
+      showSnackbar('An error occurred during sign in', 'danger')
     } finally {
       setIsLoading(false)
     }
@@ -90,28 +86,19 @@ const AuthButton: React.FC<AuthButtonProps> = ({ user, onAuthChange }) => {
       })
 
       if (error) {
-        getToaster().show({
-          message: error.message,
-          intent: Intent.DANGER,
-        })
+        showSnackbar(error.message, 'danger')
         return
       }
 
       if (data.user) {
-        getToaster().show({
-          message: 'Account created! Please check your email to verify your account.',
-          intent: Intent.SUCCESS,
-        })
+        showSnackbar('Account created! Please check your email to verify your account.', 'success')
         setIsDialogOpen(false)
         setEmail('')
         setPassword('')
       }
     } catch (error) {
       console.error('Sign up error:', error)
-      getToaster().show({
-        message: 'An error occurred during sign up',
-        intent: Intent.DANGER,
-      })
+      showSnackbar('An error occurred during sign up', 'danger')
     } finally {
       setIsLoading(false)
     }
@@ -122,24 +109,15 @@ const AuthButton: React.FC<AuthButtonProps> = ({ user, onAuthChange }) => {
     try {
       const { error } = await supabase.auth.signOut()
       if (error) {
-        getToaster().show({
-          message: error.message,
-          intent: Intent.DANGER,
-        })
+        showSnackbar(error.message, 'danger')
         return
       }
 
       onAuthChange(null)
-      getToaster().show({
-        message: 'Successfully signed out!',
-        intent: Intent.SUCCESS,
-      })
+      showSnackbar('Successfully signed out!', 'success')
     } catch (error) {
       console.error('Sign out error:', error)
-      getToaster().show({
-        message: 'An error occurred during sign out',
-        intent: Intent.DANGER,
-      })
+      showSnackbar('An error occurred during sign out', 'danger')
     } finally {
       setIsLoading(false)
     }
@@ -160,141 +138,140 @@ const AuthButton: React.FC<AuthButtonProps> = ({ user, onAuthChange }) => {
       if (data.success && data.url) {
         window.location.href = data.url
       } else {
-        getToaster().show({
-          message: 'Failed to create checkout session',
-          intent: Intent.DANGER,
-        })
+        showSnackbar('Failed to create checkout session', 'danger')
       }
     } catch (error) {
       console.error('Upgrade error:', error)
-      getToaster().show({
-        message: 'An error occurred during upgrade',
-        intent: Intent.DANGER,
-      })
+      showSnackbar('An error occurred during upgrade', 'danger')
     }
   }
 
   if (user) {
     return (
-      <div className="auth-section">
-        <div className="user-info">
-          <span className="bp5-text-muted">Welcome, {user.email}</span>
-        </div>
-        <div className="auth-buttons">
-          <Button
-            icon={IconNames.CREDIT_CARD}
-            text="Upgrade to Pro"
-            intent={Intent.PRIMARY}
-            onClick={handleUpgrade}
-            small
-          />
-          <Button
-            icon={IconNames.LOG_OUT}
-            text="Sign Out"
-            onClick={handleSignOut}
-            loading={isLoading}
-            small
-          />
-        </div>
-      </div>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Typography level="body-sm">Welcome, {user.email}</Typography>
+        <Button
+          startDecorator={<CreditCardIcon />}
+          color="primary"
+          onClick={handleUpgrade}
+          size="sm"
+        >
+          Upgrade to Pro
+        </Button>
+        <Button
+          startDecorator={<LogoutIcon />}
+          onClick={handleSignOut}
+          loading={isLoading}
+          size="sm"
+          variant="outlined"
+        >
+          Sign Out
+        </Button>
+      </Box>
     )
   }
 
   return (
     <>
       <Button
-        icon={IconNames.LOG_IN}
-        text="Sign In"
-        intent={Intent.PRIMARY}
+        startDecorator={<LoginIcon />}
+        color="primary"
         onClick={() => setIsDialogOpen(true)}
-      />
-
-      <Dialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        title="Authentication"
-        className="auth-dialog"
       >
-        <div className="bp5-dialog-body">
-          <Tabs
-            selectedTabId={selectedTab}
-            onChange={(tabId) => setSelectedTab(tabId as 'signin' | 'signup')}
-          >
-            <Tab
-              id="signin"
-              title="Sign In"
-              panel={
+        Sign In
+      </Button>
+
+      <Modal open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
+        <ModalDialog>
+          <DialogTitle>Authentication</DialogTitle>
+          <DialogContent>
+            <Tabs
+              value={selectedTab}
+              onChange={(event, newValue) => {
+                if (newValue !== null) {
+                  setSelectedTab(newValue)
+                }
+              }}
+            >
+              <TabList>
+                <Tab value="signin">Sign In</Tab>
+                <Tab value="signup">Sign Up</Tab>
+              </TabList>
+              <TabPanel value="signin">
                 <form onSubmit={handleSignIn}>
-                  <FormGroup label="Email" labelFor="signin-email">
-                    <InputGroup
-                      id="signin-email"
+                  <FormControl required sx={{ mt: 2 }}>
+                    <FormLabel>Email</FormLabel>
+                    <Input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email"
-                      required
                     />
-                  </FormGroup>
-                  <FormGroup label="Password" labelFor="signin-password">
-                    <InputGroup
-                      id="signin-password"
+                  </FormControl>
+                  <FormControl required sx={{ mt: 2 }}>
+                    <FormLabel>Password</FormLabel>
+                    <Input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
-                      required
                     />
-                  </FormGroup>
-                  <div className="auth-form-actions">
-                    <Button
-                      type="submit"
-                      intent={Intent.PRIMARY}
-                      loading={isLoading}
-                      text="Sign In"
-                    />
-                  </div>
+                  </FormControl>
+                  <Button
+                    type="submit"
+                    loading={isLoading}
+                    color="primary"
+                    fullWidth
+                    sx={{ mt: 3 }}
+                  >
+                    Sign In
+                  </Button>
                 </form>
-              }
-            />
-            <Tab
-              id="signup"
-              title="Sign Up"
-              panel={
+              </TabPanel>
+              <TabPanel value="signup">
                 <form onSubmit={handleSignUp}>
-                  <FormGroup label="Email" labelFor="signup-email">
-                    <InputGroup
-                      id="signup-email"
+                <FormControl required sx={{ mt: 2 }}>
+                    <FormLabel>Email</FormLabel>
+                    <Input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email"
-                      required
                     />
-                  </FormGroup>
-                  <FormGroup label="Password" labelFor="signup-password">
-                    <InputGroup
-                      id="signup-password"
+                  </FormControl>
+                  <FormControl required sx={{ mt: 2 }}>
+                    <FormLabel>Password</FormLabel>
+                    <Input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Create a password"
-                      required
                     />
-                  </FormGroup>
-                  <div className="auth-form-actions">
-                    <Button
-                      type="submit"
-                      intent={Intent.PRIMARY}
-                      loading={isLoading}
-                      text="Sign Up"
-                    />
-                  </div>
+                  </FormControl>
+                  <Button
+                    type="submit"
+                    loading={isLoading}
+                    color="primary"
+                    fullWidth
+                    sx={{ mt: 3 }}
+                  >
+                    Sign Up
+                  </Button>
                 </form>
-              }
-            />
-          </Tabs>
-        </div>
-      </Dialog>
+              </TabPanel>
+            </Tabs>
+          </DialogContent>
+        </ModalDialog>
+      </Modal>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={5000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        color={snackbar.color}
+        variant="soft"
+      >
+        {snackbar.message}
+      </Snackbar>
     </>
   )
 }

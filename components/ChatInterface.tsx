@@ -1,17 +1,17 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import {
-  InputGroup,
-  Button,
-  Card,
-  Drawer,
-  Intent,
-  Toaster,
-  Position,
-  Spinner,
-} from '@blueprintjs/core'
-import { IconNames } from '@blueprintjs/icons'
+import Box from '@mui/joy/Box';
+import Button from '@mui/joy/Button';
+import Card from '@mui/joy/Card';
+import CircularProgress from '@mui/joy/CircularProgress';
+import Drawer from '@mui/joy/Drawer';
+import Input from '@mui/joy/Input';
+import Typography from '@mui/joy/Typography';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import SendIcon from '@mui/icons-material/Send';
+import HistoryIcon from '@mui/icons-material/History';
 import { Renderer } from './Renderer'
 import { AIResponse, ChatMessage, UsageQuota } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
@@ -21,15 +21,8 @@ interface ChatInterfaceProps {
   user: User | null
 }
 
-let toaster: Toaster | null = null;
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
-  const getToaster = (): Toaster => {
-    if (toaster === null) {
-        toaster = Toaster.create({ position: Position.TOP });
-    }
-    return toaster;
-  };
 
   const [prompt, setPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -38,6 +31,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const [quota, setQuota] = useState<UsageQuota | null>(null)
   const [anonymousCount, setAnonymousCount] = useState(0)
+  const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
   
   const inputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
@@ -78,10 +72,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
 
     // Check quota for anonymous users
     if (!user && anonymousCount >= 10) {
-      getToaster().show({
-        message: "You've reached the 10 message limit. Please sign up to continue.",
-        intent: Intent.WARNING,
-      })
+      setToast({ open: true, message: "You've reached the 10 message limit. Please sign up to continue.", severity: 'warning' })
       return
     }
 
@@ -100,10 +91,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
       const data = await response.json()
 
       if (!data.success) {
-        getToaster().show({
-          message: data.error || 'Failed to generate response',
-          intent: Intent.DANGER,
-        })
+        setToast({ open: true, message: data.error || 'Failed to generate response', severity: 'error' })
         return
       }
 
@@ -122,10 +110,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
       }
     } catch (error) {
       console.error('Chat error:', error)
-      getToaster().show({
-        message: 'Network error. Please try again.',
-        intent: Intent.DANGER,
-      })
+      setToast({ open: true, message: 'Network error. Please try again.', severity: 'error' })
     } finally {
       setIsLoading(false)
     }
@@ -157,9 +142,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
   }
 
   return (
-    <div className="chat-interface">
-      <div className="chat-container">
-        <Card elevation={2} className="chat-card">
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', maxWidth: '800px', margin: 'auto' }}>
+        <Card variant="outlined" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
           {/* Current Response */}
           {currentResponse && (
             <div className="current-response">
@@ -169,62 +153,61 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
 
           {/* Loading State */}
           {isLoading && (
-            <div className="loading-state">
-              <Spinner size={30} />
-              <p className="bp5-text-muted">Generating response...</p>
-            </div>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+              <CircularProgress size="md" />
+              <Typography level="body-sm" sx={{ mt: 1 }}>Generating response...</Typography>
+            </Box>
           )}
 
           {/* Prompt Input */}
-          <form onSubmit={handleSubmit} className="prompt-form">
-            <InputGroup
-              inputRef={inputRef}
+          <form onSubmit={handleSubmit} style={{ marginTop: 'auto' }}>
+            <Input
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Ask me anything..."
-              large
-              fill
               disabled={isLoading}
-              rightElement={
+              endDecorator={
                 <Button
                   type="submit"
-                  icon={IconNames.SEND_MESSAGE}
-                  minimal
                   disabled={!prompt.trim() || isLoading}
-                />
+                  loading={isLoading}
+                >
+                  <SendIcon />
+                </Button>
               }
+              sx={{ mt: 2 }}
             />
           </form>
 
           {/* Quota Display */}
           {getQuotaDisplay() && (
-            <div className="quota-display">
-              <small className="bp5-text-muted">{getQuotaDisplay()}</small>
-            </div>
+            <Typography level="body-xs" sx={{ textAlign: 'center', mt: 1, color: 'text.tertiary' }}>
+              {getQuotaDisplay()}
+            </Typography>
           )}
         </Card>
 
-        {/* History Button */}
         {user && (
           <Button
-            icon={IconNames.HISTORY}
-            text="History"
+            startDecorator={<HistoryIcon />}
             onClick={() => setIsHistoryOpen(true)}
-            className="history-button"
-          />
+            variant="outlined"
+            sx={{ mt: 2, alignSelf: 'center' }}
+          >
+            History
+          </Button>
         )}
-      </div>
 
       {/* History Drawer */}
       <Drawer
-        isOpen={isHistoryOpen}
+        open={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
-        title="Chat History"
-        size="400px"
+        anchor="right"
       >
-        <div className="history-content">
+        <Box sx={{ width: 400, p: 2 }}>
+          <Typography level="h4" component="h2" sx={{ mb: 2 }}>Chat History</Typography>
           {chatHistory.length === 0 ? (
-            <p className="bp5-text-muted">No chat history yet.</p>
+            <Typography>No chat history yet.</Typography>
           ) : (
             <div className="history-timeline">
               {chatHistory.map((message) => (
@@ -245,9 +228,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
               ))}
             </div>
           )}
-        </div>
+        </Box>
       </Drawer>
-    </div>
+
+      {toast && (
+        <Snackbar
+          open={toast.open}
+          autoHideDuration={6000}
+          onClose={() => setToast(prev => prev ? { ...prev, open: false } : null)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setToast(prev => prev ? { ...prev, open: false } : null)} severity={toast.severity} sx={{ width: '100%' }}>
+            {toast.message}
+          </Alert>
+        </Snackbar>
+      )}
+    </Box>
   )
 }
 

@@ -22,7 +22,37 @@ Component types available:
 - {"kind": "rating", "value": number, "of": number} - for ratings/scores
 - {"kind": "card", "title": "string", "body": "string"} - for card layouts
 - {"kind": "form", "fields": [...]} - for interactive forms
-- {"kind": "chart", "chartType": "bar", "data": [{"label": "string", "value": number}]} - for data visualizations. Use this for displaying quantitative data.
+- {"kind": "chart", "chartType": "bar", "data": [{"label": "string", "value": number}]} - for data visualizations
+- {"kind": "clock", "label": "string?", "timezone": "string?"} - for displaying time (e.g., 'America/New_York')
+- {"kind": "progress", "value": number, "max": "number?", "label": "string?"} - for progress bars
+- {"kind": "alert", "title": "string?", "content": "string", "severity": "info" | "warning" | "success" | "danger"} - for notifications
+// Basic/Content
+- {"kind": "markdown", "content": "string"}
+- {"kind": "code", "language": "ts", "code": "console.log('hi')"}
+- {"kind": "list", "ordered": false, "items": ["one","two"]}
+- {"kind": "timeline", "items": [{"label": "Started", "timestamp": "2024-01-01"}]}
+- {"kind": "accordion", "items": [{"title": "Q1", "content": "A1"}]}
+- {"kind": "tabs", "tabs": [{"label": "Tab A", "content": "Hello"}]}
+- {"kind": "chips", "chips": [{"label": "Tag"}]}
+- {"kind": "avatarList", "avatars": [{"name": "Ada"}]}
+- {"kind": "tooltip", "label": "Hover me", "text": "More info"}
+- {"kind": "divider", "text": "Section"}
+- {"kind": "stepperTabs", "steps": [{"label": "Step 1", "content": "Do X"}]}
+// Data/Info
+- {"kind": "statCounter", "label": "Users", "value": 123}
+- {"kind": "kpiCard", "title": "Revenue", "value": "$12k", "change": 12}
+- {"kind": "sparkline", "data": [1,3,2,4,6]}
+- {"kind": "gauge", "value": 72}
+- {"kind": "heatmap", "values": [[0.1,0.6],[0.3,0.9]], "rowLabels": ["A","B"], "colLabels": ["X","Y"]}
+- {"kind": "calendar", "selectedDate": "2025-01-01"}
+- {"kind": "timelineChart", "points": [{"t": 1, "v": 10},{"t":2, "v":15}]}
+- {"kind": "treemap", "root": {"name": "root", "children": [{"name": "A", "value": 10},{"name": "B", "value": 20}]}}
+- {"kind": "treeViewer", "root": {"name": "root", "children": [{"name": "A"}]}}
+- {"kind": "jsonViewer", "data": {"a": 1, "b": [2,3]}}
+// New components
+- {"kind": "table", "headers": ["col1", "col2"], "rows": [["a", 1], ["b", 2]]}
+- {"kind": "datagrid", "columns": [{"field": "name", "headerName": "Name"}], "rows": [{"id": 1, "name": "Ada"}], "pageSize": 5}
+- {"kind": "map", "center": {"lat": 40.748, "lng": -73.985}, "zoom": 12, "markers": [{"lat": 40.748, "lng": -73.985, "label": "Midtown"}]}
 
 Form field types (MUST include id, label, and type):
 - {"id": "string", "label": "string", "type": "text", "defaultValue": "string"}

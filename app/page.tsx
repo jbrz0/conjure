@@ -5,6 +5,9 @@ import { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import ChatInterface from '@/components/ChatInterface'
 import AuthButton from '@/components/AuthButton'
+import CircularProgress from '@mui/joy/CircularProgress';
+import Box from '@mui/joy/Box';
+import Typography from '@mui/joy/Typography';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
@@ -34,20 +37,9 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="bp5-spinner bp5-large">
-          <svg viewBox="0 0 100 100">
-            <path
-              className="bp5-spinner-track"
-              d="M 50,50 m 0,-44.5 a 44.5,44.5 0 1 1 0,89 a 44.5,44.5 0 1 1 0,-89"
-            />
-            <path
-              className="bp5-spinner-head"
-              d="M 50,50 m 0,-44.5 a 44.5,44.5 0 1 1 0,89 a 44.5,44.5 0 1 1 0,-89"
-            />
-          </svg>
-        </div>
-      </div>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress size="lg" />
+      </Box>
     )
   }
 
@@ -65,9 +57,9 @@ export default function Home() {
       </div>
 
       <footer className="app-footer">
-        <p className="bp5-text-muted">
+        <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
           Powered by AI • Built with Next.js & Supabase
-        </p>
+        </Typography>
       </footer>
     </main>
   )

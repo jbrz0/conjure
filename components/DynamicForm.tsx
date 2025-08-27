@@ -1,7 +1,13 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Button, FormGroup, InputGroup, HTMLSelect } from '@blueprintjs/core';
+import Button from '@mui/joy/Button';
+import FormControl from '@mui/joy/FormControl';
+import FormLabel from '@mui/joy/FormLabel';
+import Input from '@mui/joy/Input';
+import Select from '@mui/joy/Select';
+import Option from '@mui/joy/Option';
+import Box from '@mui/joy/Box';
 
 interface FormField {
   id: string;
@@ -36,26 +42,29 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ fields, onSubmit }) =>
 
   return (
     <form onSubmit={handleSubmit}>
-      {fields.map(field => (
-        <FormGroup key={field.id} label={field.label} labelFor={field.id}>
-          {field.type === 'select' ? (
-            <HTMLSelect
-              id={field.id}
-              fill
-              value={formData[field.id]}
-              onChange={e => handleChange(field.id, e.target.value)}
-              options={field.options || []}
-            />
-          ) : (
-            <InputGroup
-              id={field.id}
-              value={formData[field.id]}
-              onChange={e => handleChange(field.id, e.target.value)}
-            />
-          )}
-        </FormGroup>
-      ))}
-      <Button type="submit" text="Submit" intent="primary" fill />
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {fields.map(field => (
+          <FormControl key={field.id}>
+            <FormLabel>{field.label}</FormLabel>
+            {field.type === 'select' ? (
+              <Select
+                value={formData[field.id]}
+                onChange={(_, newValue) => handleChange(field.id, newValue || '')}
+              >
+                {(field.options || []).map(option => (
+                  <Option key={option} value={option}>{option}</Option>
+                ))}
+              </Select>
+            ) : (
+              <Input
+                value={formData[field.id]}
+                onChange={e => handleChange(field.id, e.target.value)}
+              />
+            )}
+          </FormControl>
+        ))}
+        <Button type="submit" sx={{ mt: 2 }}>Submit</Button>
+      </Box>
     </form>
   );
 };

@@ -9,6 +9,7 @@ CREATE TABLE users (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT NOT NULL UNIQUE,
     plan user_plan DEFAULT 'free' NOT NULL,
+    is_superuser BOOLEAN DEFAULT FALSE NOT NULL,
     messages_sent INTEGER DEFAULT 0 NOT NULL,
     period_start TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,

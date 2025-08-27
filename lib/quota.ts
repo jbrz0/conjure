@@ -26,6 +26,14 @@ export async function getUserQuota(userId: string): Promise<UsageQuota | null> {
     return null
   }
 
+  if (user.is_superuser) {
+    return {
+      used: 0,
+      limit: Infinity,
+      resetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+    }
+  }
+
   const limit = user.plan === 'pro' ? PRO_LIMIT : FREE_LIMIT
   const periodStart = new Date(user.period_start)
   const now = new Date()

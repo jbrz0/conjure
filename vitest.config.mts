@@ -8,10 +8,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
     globals: true,
+    css: true,
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
+      '@mui/x-data-grid/esm/index.css': path.resolve(__dirname, './test/__mocks__/style.css'),
     },
   },
 })
