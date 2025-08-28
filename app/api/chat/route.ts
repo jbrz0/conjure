@@ -6,12 +6,13 @@ import { z } from 'zod'
 
 const ChatRequestSchema = z.object({
   prompt: z.string().min(1).max(1000),
+  forceWebSearch: z.boolean().optional(),
 })
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { prompt } = ChatRequestSchema.parse(body)
+    const { prompt, forceWebSearch } = ChatRequestSchema.parse(body)
 
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -25,8 +26,20 @@ export async function POST(request: NextRequest) {
       }, { status: 429 })
     }
 
+    // Decide whether to enable web search for live/real-time queries
+    const lower = prompt.toLowerCase()
+    const needsWeb = /(stock|price|ticker|weather|forecast|today|now|current|breaking|news|live|trending|exchange|market|crypto|btc|eth)/.test(lower) || !!forceWebSearch
+
     // Generate AI response
-    const aiResponse = await generateAIResponse(prompt)
+    const { response: aiResponse, fallbackUsed } = await generateAIResponse(prompt, { enableWebSearch: needsWeb })
+
+    // If the model failed to produce valid output, surface an error and do not count usage
+    if (fallbackUsed) {
+      return NextResponse.json({
+        success: false,
+        error: 'The AI had trouble generating a valid response. Please try again.',
+      }, { status: 502 })
+    }
 
     // Save to database and increment usage
     if (user) {

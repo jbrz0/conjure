@@ -20,13 +20,9 @@ body {
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(0,213,245,0.15), transparent 40%),
+              radial-gradient(800px 400px at 110% 10%, rgba(255,23,68,0.08), transparent 40%),
+              #0b1020;
 }
 
 a {
@@ -45,7 +41,7 @@ a {
 .app-header {
   padding: 1rem 2rem;
   border-bottom: 1px solid #394b59;
-  background: #30404d;
+  background: linear-gradient(180deg, #121833, #0e1430);
 }
 
 .header-content {
@@ -75,7 +71,7 @@ a {
   padding: 1rem 2rem;
   text-align: center;
   border-top: 1px solid #394b59;
-  background: #30404d;
+  background: #0e1430;
 }
 
 /* Loading */

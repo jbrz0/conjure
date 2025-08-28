@@ -3,7 +3,13 @@ import { AIResponse, AIResponseSchema } from './types'
 const AI_API_KEY = process.env.AI_API_KEY!
 const AI_MODEL_NAME = process.env.AI_MODEL_NAME!
 
-export async function generateAIResponse(prompt: string): Promise<AIResponse> {
+export interface GenerateAIResult {
+  response: AIResponse
+  // True when we had to synthesize a fallback message due to parsing/validation error
+  fallbackUsed: boolean
+}
+
+export async function generateAIResponse(prompt: string, options?: { enableWebSearch?: boolean }): Promise<GenerateAIResult> {
   const systemPrompt = `You are Conjure, an AI assistant that creates dynamic, interactive responses. 
 
 CRITICAL: You must ALWAYS respond with valid JSON that exactly matches this schema:
@@ -58,6 +64,8 @@ Form field types (MUST include id, label, and type):
 - {"id": "string", "label": "string", "type": "text", "defaultValue": "string"}
 - {"id": "string", "label": "string", "type": "select", "options": ["option1", "option2"]}
 
+If the user prompt contains a line starting with "FORCE_COMPONENT:", you MUST use that exact component kind in your response. Prefer returning exactly one component of that kind unless the user asked otherwise.
+
 Choose layout based on content:
 - "stack" - vertical list of components
 - "grid" - 2-column grid layout
@@ -67,6 +75,31 @@ Choose layout based on content:
 Make responses engaging and interactive. Use multiple component types when appropriate.`
 
   try {
+    const requestBody: any = {
+      contents: [
+        {
+          parts: [
+            { text: systemPrompt },
+            { text: `User request: ${prompt}` },
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+        // Strongly bias the model to emit JSON only
+        responseMimeType: 'application/json',
+      },
+    }
+
+    // Optionally enable Google Search grounding for live data
+    if (options?.enableWebSearch) {
+      // Enable Google Search grounding (REST accepts tools without explicit toolConfig)
+      requestBody.tools = [{ googleSearchRetrieval: {} }]
+    }
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL_NAME}:generateContent?key=${AI_API_KEY}`,
       {
@@ -74,22 +107,7 @@ Make responses engaging and interactive. Use multiple component types when appro
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: systemPrompt },
-                { text: `User request: ${prompt}` }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 2048,
-          },
-        }),
+        body: JSON.stringify(requestBody),
       }
     )
 
@@ -106,6 +124,7 @@ Make responses engaging and interactive. Use multiple component types when appro
 
     // Parse the JSON response
     let parsedResponse: unknown
+    let fallbackUsed = false
     try {
       // Clean the response - remove markdown code blocks if present
       const cleanedText = aiText.replace(/```json\n?|\n?```/g, '').trim()
@@ -113,6 +132,7 @@ Make responses engaging and interactive. Use multiple component types when appro
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', aiText)
       // Fallback response
+      fallbackUsed = true
       parsedResponse = {
         topline: 'I encountered an error processing your request.',
         layout: 'stack',
@@ -126,13 +146,25 @@ Make responses engaging and interactive. Use multiple component types when appro
     }
 
     // Validate against schema
-    const validatedResponse = AIResponseSchema.parse(parsedResponse)
-    return validatedResponse
+    let validatedResponse: AIResponse
+    try {
+      validatedResponse = AIResponseSchema.parse(parsedResponse)
+    } catch (e) {
+      console.error('AI response failed schema validation:', e)
+      fallbackUsed = true
+      validatedResponse = {
+        topline: 'I encountered an error processing your request.',
+        layout: 'stack',
+        components: [
+          { kind: 'text', content: 'Sorry, I had trouble generating a response. Please try again.' },
+        ],
+      }
+    }
+    return { response: validatedResponse, fallbackUsed }
   } catch (error) {
     console.error('AI generation error:', error)
-    
     // Fallback response
-    return {
+    const fallback: AIResponse = {
       topline: 'I encountered an error processing your request.',
       layout: 'stack',
       components: [
@@ -142,5 +174,6 @@ Make responses engaging and interactive. Use multiple component types when appro
         },
       ],
     }
+    return { response: fallback, fallbackUsed: true }
   }
 }

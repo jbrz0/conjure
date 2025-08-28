@@ -74,8 +74,9 @@ import { MermaidView } from './integrations/MermaidView'
 import { NetworkGraph } from './integrations/NetworkGraph'
 import Card from '@mui/joy/Card';
 import Typography from '@mui/joy/Typography';
-import Rating from '@mui/material/Rating';
 import Box from '@mui/joy/Box';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 
 interface RendererProps {
   response: AIResponse
@@ -101,13 +102,23 @@ const renderComponent = (
         />
       )
 
-    case 'rating':
+    case 'rating': {
+      const filled = Math.max(0, Math.min(component.value, component.of))
+      const empty = Math.max(0, component.of - filled)
       return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Rating name="read-only" value={component.value} max={component.of} readOnly />
+          <Box sx={{ display: 'flex' }}>
+            {Array.from({ length: filled }).map((_, i) => (
+              <StarIcon key={`f-${i}`} sx={{ color: 'warning.400' }} />
+            ))}
+            {Array.from({ length: empty }).map((_, i) => (
+              <StarBorderIcon key={`e-${i}`} sx={{ color: 'neutral.500' }} />
+            ))}
+          </Box>
           <Typography>{component.value} / {component.of}</Typography>
         </Box>
       )
+    }
 
     case 'clock':
       return <DynamicClock {...component} />

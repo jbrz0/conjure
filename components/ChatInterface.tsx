@@ -16,6 +16,7 @@ import { Renderer } from './Renderer'
 import { AIResponse, ChatMessage, UsageQuota } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
+import ComponentPicker from './ComponentPicker'
 
 interface ChatInterfaceProps {
   user: User | null
@@ -32,6 +33,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
   const [quota, setQuota] = useState<UsageQuota | null>(null)
   const [anonymousCount, setAnonymousCount] = useState(0)
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
+  const [forcedKind, setForcedKind] = useState<string | null>(null)
+  const [forceWebSearch, setForceWebSearch] = useState<boolean>(false)
   
   const inputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
@@ -80,12 +83,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
     setCurrentResponse(null) // Clear previous response
 
     try {
+      const steering = forcedKind ? `\n\nFORCE_COMPONENT: ${forcedKind}\n` : ''
+      const finalPrompt = steering ? `${promptText}${steering}` : promptText
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: promptText }),
+        body: JSON.stringify({ prompt: finalPrompt, forceWebSearch }),
       })
 
       const data = await response.json()
@@ -159,6 +164,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
             </Box>
           )}
 
+          {/* Component Picker */}
+          <ComponentPicker
+            selected={forcedKind}
+            onChange={setForcedKind}
+            onToggleSearch={setForceWebSearch}
+            forceWebSearch={forceWebSearch}
+          />
+
           {/* Prompt Input */}
           <form onSubmit={handleSubmit} style={{ marginTop: 'auto' }}>
             <Input
@@ -175,7 +188,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
                   <SendIcon />
                 </Button>
               }
-              sx={{ mt: 2 }}
+              sx={{
+                mt: 2,
+                fontSize: '1.05rem',
+                '--Input-minHeight': '56px',
+                backgroundColor: 'background.level1',
+                borderRadius: '14px',
+                border: '1px solid',
+                borderColor: 'neutral.outlinedBorder',
+                boxShadow: '0 0 0 2px rgba(0,213,245,0.15), 0 0 24px rgba(0,213,245,0.08)',
+                '&:focus-within': {
+                  boxShadow: '0 0 0 2px rgba(15,225,255,0.35), 0 0 28px rgba(15,225,255,0.18)',
+                  borderColor: 'primary.solidBg',
+                },
+              }}
             />
           </form>
 
