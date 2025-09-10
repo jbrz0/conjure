@@ -403,6 +403,10 @@ const NetworkGraphComponentSchema = z.object({
   kind: z.literal('networkGraph'),
   nodes: z.array(z.object({ id: z.string() })),
   links: z.array(z.object({ source: z.string(), target: z.string() })),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  responsive: z.boolean().optional(),
+  aspectRatio: z.number().optional(),
 });
 
 // Tabular data - simple table

@@ -10,6 +10,9 @@ export interface GenerateAIResult {
 }
 
 export async function generateAIResponse(prompt: string, options?: { enableWebSearch?: boolean }): Promise<GenerateAIResult> {
+  if (!AI_API_KEY || !AI_MODEL_NAME) {
+    console.error('AI configuration missing. Ensure AI_API_KEY and AI_MODEL_NAME are set.')
+  }
   const systemPrompt = `You are Conjure, an AI assistant that creates dynamic, interactive responses. 
 
 CRITICAL: You must ALWAYS respond with valid JSON that exactly matches this schema:
@@ -59,6 +62,28 @@ Component types available:
 - {"kind": "table", "headers": ["col1", "col2"], "rows": [["a", 1], ["b", 2]]}
 - {"kind": "datagrid", "columns": [{"field": "name", "headerName": "Name"}], "rows": [{"id": 1, "name": "Ada"}], "pageSize": 5}
 - {"kind": "map", "center": {"lat": 40.748, "lng": -73.985}, "zoom": 12, "markers": [{"lat": 40.748, "lng": -73.985, "label": "Midtown"}]}
+- {"kind": "networkGraph", "nodes": [{"id": "A"},{"id": "B"},{"id": "C"}], "links": [{"source": "A", "target": "B"}, {"source": "B", "target": "C"}], "width": 600, "height": 360}
+// Layout/UI
+- {"kind": "hero", "title": "string", "subtitle": "string?", "cta": {"label": "string", "href": "string?"}}
+- {"kind": "cardGrid", "items": [{"title": "string", "body": "string"}], "columns": 2}
+- {"kind": "statGrid", "items": [{"label": "Users", "value": 123}], "columns": 3}
+- {"kind": "gridList", "items": [{"title": "string", "subtitle": "string?"}]}
+- {"kind": "masonry", "items": [{"content": "string"}]}
+- {"kind": "splitView", "left": "string", "right": "string", "ratio": 0.5}
+// Feedback/Overlays
+- {"kind": "snackbar", "message": "string", "color": "success" | "danger" | "warning" | "neutral"}
+- {"kind": "modal", "title": "string?", "content": "string"}
+- {"kind": "drawer", "side": "left" | "right" | "top" | "bottom", "content": "string"}
+- {"kind": "skeleton", "width": 200, "height": 24}
+- {"kind": "progressCircular", "value": 42}
+- {"kind": "emptyState", "title": "string", "description": "string?"}
+// Media
+- {"kind": "video", "src": "string", "controls": true}
+- {"kind": "audio", "src": "string", "controls": true}
+- {"kind": "imageGallery", "images": [{"url": "string", "alt": "string?"}]}
+- {"kind": "mediaCarousel", "items": [{"url": "string", "alt": "string?"}]}
+- {"kind": "qr", "text": "string"}
+- {"kind": "barcode", "text": "string"}
 
 Form field types (MUST include id, label, and type):
 - {"id": "string", "label": "string", "type": "text", "defaultValue": "string"}
@@ -116,9 +141,17 @@ Make responses engaging and interactive. Use multiple component types when appro
     }
 
     const data = await response.json()
+
+    if (!data.candidates || data.candidates.length === 0) {
+      console.error('AI API returned no candidates. Full response:', JSON.stringify(data, null, 2))
+    }
+    
     const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text
 
     if (!aiText) {
+      if (data.promptFeedback?.blockReason) {
+        throw new Error(`AI request blocked due to: ${data.promptFeedback.blockReason}`)
+      }
       throw new Error('No response from AI')
     }
 
@@ -127,7 +160,12 @@ Make responses engaging and interactive. Use multiple component types when appro
     let fallbackUsed = false
     try {
       // Clean the response - remove markdown code blocks if present
-      const cleanedText = aiText.replace(/```json\n?|\n?```/g, '').trim()
+      let cleanedText = aiText.replace(/```json\n?|\n?```/g, '').trim()
+      // If extra prose surrounds the JSON, extract the first JSON object
+      if (!(cleanedText.startsWith('{') && cleanedText.endsWith('}'))) {
+        const match = cleanedText.match(/\{[\s\S]*\}/)
+        if (match) cleanedText = match[0]
+      }
       parsedResponse = JSON.parse(cleanedText)
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', aiText)
@@ -163,6 +201,13 @@ Make responses engaging and interactive. Use multiple component types when appro
     return { response: validatedResponse, fallbackUsed }
   } catch (error) {
     console.error('AI generation error:', error)
+
+    const errorMessage = (error instanceof Error && error.message.includes('blocked'))
+      ? 'Your request was blocked by our content filter. Please rephrase your prompt and try again.'
+      : (!AI_API_KEY || !AI_MODEL_NAME)
+        ? 'Server is missing AI configuration. Please set AI_API_KEY and AI_MODEL_NAME.'
+        : 'Sorry, I had trouble generating a response. Please try again.'
+
     // Fallback response
     const fallback: AIResponse = {
       topline: 'I encountered an error processing your request.',
@@ -170,7 +215,7 @@ Make responses engaging and interactive. Use multiple component types when appro
       components: [
         {
           kind: 'text',
-          content: 'Sorry, I had trouble generating a response. Please try again.',
+          content: errorMessage,
         },
       ],
     }

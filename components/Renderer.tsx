@@ -267,7 +267,16 @@ const renderComponent = (
     case 'mermaid':
       return <MermaidView code={component.code} />
     case 'networkGraph':
-      return <NetworkGraph nodes={component.nodes} links={component.links} />
+      return (
+        <NetworkGraph
+          nodes={component.nodes}
+          links={component.links}
+          width={component.width}
+          height={component.height}
+          responsive={component.responsive}
+          aspectRatio={component.aspectRatio}
+        />
+      )
 
     case 'table':
       return <DynamicTable headers={component.headers} rows={component.rows} />

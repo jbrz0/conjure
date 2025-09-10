@@ -8,8 +8,7 @@ import CircularProgress from '@mui/joy/CircularProgress';
 import Drawer from '@mui/joy/Drawer';
 import Input from '@mui/joy/Input';
 import Typography from '@mui/joy/Typography';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/joy/Snackbar';
 import SendIcon from '@mui/icons-material/Send';
 import HistoryIcon from '@mui/icons-material/History';
 import { Renderer } from './Renderer'
@@ -261,12 +260,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ user }) => {
         <Snackbar
           open={toast.open}
           autoHideDuration={6000}
-          onClose={() => setToast(prev => prev ? { ...prev, open: false } : null)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          onClose={() => setToast(prev => (prev ? { ...prev, open: false } : null))}
+          color={toast.severity === 'error' ? 'danger' : toast.severity === 'warning' ? 'warning' : toast.severity === 'success' ? 'success' : 'primary'}
+          variant="soft"
         >
-          <Alert onClose={() => setToast(prev => prev ? { ...prev, open: false } : null)} severity={toast.severity} sx={{ width: '100%' }}>
-            {toast.message}
-          </Alert>
+          {toast.message}
         </Snackbar>
       )}
     </Box>

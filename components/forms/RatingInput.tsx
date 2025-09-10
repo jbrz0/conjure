@@ -11,7 +11,14 @@ export const RatingInput: React.FC<RatingInputProps> = ({ label, value = 3, max 
   return (
     <div>
       {label && <Typography level="body-sm" sx={{ mb: 0.5 }}>{label}</Typography>}
-      <Rating value={val} max={max} onChange={(_, v) => setVal(v)} />
+      <Rating
+        value={val}
+        max={max}
+        onChange={(
+          _event: React.SyntheticEvent<Element, Event>,
+          value: number | null
+        ) => setVal(value)}
+      />
     </div>
   )
 }

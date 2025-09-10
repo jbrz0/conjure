@@ -195,9 +195,10 @@ export default function ComponentPicker({
         onChange={(_, value) => onChange(value ? value.kind : null)}
         startDecorator={<WidgetsIcon />}
         renderOption={(props, option) => {
-          const { ownerState, ...liProps } = (props as any)
+          const { ownerState, key, ...liProps } = (props as any)
           return (
           <li
+            key={key}
             {...liProps}
             style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBlock: 8 }}
           >
@@ -225,7 +226,7 @@ export default function ComponentPicker({
       />
       {selected && (
         <Chip color="primary" variant="soft" sx={{ mt: 1 }}>
-          Forced component: {selected}
+          Component: {selected}
         </Chip>
       )}
       {onToggleSearch && (

@@ -29,7 +29,12 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getSession()
+  try {
+    await supabase.auth.getSession()
+  } catch (error) {
+    // Log the error but don't crash the startup
+    console.warn('Supabase session check failed during startup:', error)
+  }
 
   return response
 }

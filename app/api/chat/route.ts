@@ -33,12 +33,14 @@ export async function POST(request: NextRequest) {
     // Generate AI response
     const { response: aiResponse, fallbackUsed } = await generateAIResponse(prompt, { enableWebSearch: needsWeb })
 
-    // If the model failed to produce valid output, surface an error and do not count usage
+    // If the model failed to produce valid output, return fallback content but do not count usage
     if (fallbackUsed) {
       return NextResponse.json({
-        success: false,
-        error: 'The AI had trouble generating a valid response. Please try again.',
-      }, { status: 502 })
+        success: true,
+        data: aiResponse,
+        quota: quotaCheck.quota,
+        note: 'AI fallback used due to invalid model output',
+      })
     }
 
     // Save to database and increment usage
